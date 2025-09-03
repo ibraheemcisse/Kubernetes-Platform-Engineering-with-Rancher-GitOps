@@ -1,0 +1,127 @@
+# argocd-apps/bootstrap/argocd-install.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    name: argocd
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://argoproj.github.io/argo-helm
+    chart: argo-cd
+    targetRevision: 5.46.7
+    helm:
+      values: |
+        global:
+          image:
+            tag: "v2.8.4"
+        
+        configs:
+          params:
+            server.insecure: true
+            application.instanceLabelKey: argocd.argoproj.io/instance
+          
+          cm:
+            url: https://argocd.ioc-labs.local
+            application.instanceLabelKey: argocd.argoproj.io/instance
+            accounts.admin: apiKey,login
+            accounts.readonly: apiKey,login
+          
+          rbac:
+            policy.default: role:readonly
+            policy.csv: |
+              p, role:admin, applications, *, */*, allow
+              p, role:admin, certificates, *, *, allow
+              p, role:admin, clusters, *, *, allow
+              p, role:admin, repositories, *, *, allow
+              p, role:admin, logs, *, *, allow
+              p, role:admin, exec, *, *, allow
+              g, argocd-admins, role:admin
+        
+        controller:
+          replicas: 1
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+          env:
+            - name: ARGOCD_CONTROLLER_REPLICAS
+              value: "1"
+        
+        dex:
+          enabled: false
+        
+        server:
+          replicas: 1
+          autoscaling:
+            enabled: false
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+          
+          ingress:
+            enabled: true
+            annotations:
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+              cert-manager.io/cluster-issuer: "letsencrypt-prod"
+            hosts:
+              - host: argocd.ioc-labs.local
+                paths:
+                  - path: /
+                    pathType: Prefix
+            tls:
+              - secretName: argocd-server-tls
+                hosts:
+                  - argocd.ioc-labs.local
+        
+        repoServer:
+          replicas: 1
+          autoscaling:
+            enabled: false
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+        
+        applicationSet:
+          replicas: 1
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+        
+        redis:
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

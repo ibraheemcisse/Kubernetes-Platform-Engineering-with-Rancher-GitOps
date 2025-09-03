@@ -1,0 +1,238 @@
+# argocd-apps/core-infrastructure/app-of-apps.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: core-infrastructure
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ioc-labs/platform-demo-gitops.git  # Update with your GitOps repo
+    targetRevision: HEAD
+    path: argocd-apps/core-infrastructure
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+# argocd-apps/core-infrastructure/cert-manager.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.13.0
+    helm:
+      values: |
+        installCRDs: true
+        global:
+          leaderElection:
+            namespace: cert-manager
+        
+        prometheus:
+          enabled: true
+          servicemonitor:
+            enabled: true
+            prometheusInstance: default
+            targetPort: 9402
+            path: /metrics
+            interval: 60s
+            scrapeTimeout: 30s
+        
+        webhook:
+          securePort: 10250
+        
+        extraArgs:
+          - --dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53
+          - --dns01-recursive-nameservers-only
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - Replace=true
+
+---
+# argocd-apps/core-infrastructure/ingress-nginx.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingress-nginx
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes.github.io/ingress-nginx
+    chart: ingress-nginx
+    targetRevision: 4.8.0
+    helm:
+      values: |
+        controller:
+          service:
+            type: LoadBalancer
+            annotations:
+              service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+              service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+          
+          config:
+            use-proxy-protocol: "false"
+            compute-full-forwarded-for: "true"
+            use-forwarded-headers: "true"
+            proxy-real-ip-cidr: "10.0.0.0/16"
+          
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+              additionalLabels:
+                app.kubernetes.io/part-of: ingress-nginx
+          
+          admissionWebhooks:
+            enabled: true
+            failurePolicy: Fail
+            port: 8443
+            certificate: "/usr/local/certificates/cert"
+            key: "/usr/local/certificates/key"
+            namespaceSelector: {}
+            objectSelector: {}
+          
+          resources:
+            requests:
+              cpu: 100m
+              memory: 90Mi
+            limits:
+              memory: 256Mi
+          
+          autoscaling:
+            enabled: false
+            minReplicas: 1
+            maxReplicas: 11
+            targetCPUUtilizationPercentage: 50
+            targetMemoryUtilizationPercentage: 50
+        
+        defaultBackend:
+          enabled: true
+          image:
+            repository: registry.k8s.io/defaultbackend-amd64
+            tag: "1.5"
+          
+          resources:
+            limits:
+              cpu: 10m
+              memory: 20Mi
+            requests:
+              cpu: 10m
+              memory: 20Mi
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ingress-nginx
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+# argocd-apps/core-infrastructure/cluster-issuers.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-issuers
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ioc-labs/platform-demo-gitops.git  # Update with your GitOps repo
+    targetRevision: HEAD
+    path: helm-charts/cluster-issuers
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+
+---
+# argocd-apps/core-infrastructure/external-secrets.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-secrets
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.external-secrets.io
+    chart: external-secrets
+    targetRevision: 0.9.9
+    helm:
+      values: |
+        installCRDs: true
+        
+        replicaCount: 1
+        
+        image:
+          repository: ghcr.io/external-secrets/external-secrets
+          pullPolicy: IfNotPresent
+          tag: "v0.9.9"
+        
+        prometheus:
+          enabled: true
+          service:
+            port: 8080
+        
+        webhook:
+          image:
+            repository: ghcr.io/external-secrets/external-secrets
+            tag: "v0.9.9"
+          replicaCount: 1
+          
+        certController:
+          image:
+            repository: ghcr.io/external-secrets/external-secrets
+            tag: "v0.9.9"
+          replicaCount: 1
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-secrets-system
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
