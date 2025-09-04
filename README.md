@@ -23,7 +23,6 @@ This repository demonstrates the complete journey from infrastructure provisioni
 - [🔄 GitOps Workflows](#-gitops-workflows)
 - [💾 Storage Management](#-storage-management)
 - [🧪 Testing & Validation](#-testing--validation)
-- [📚 Documentation](#-documentation)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 
