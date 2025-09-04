@@ -622,23 +622,6 @@ argocd app sync --dry-run longhorn
 
 ---
 
-## 📚 Documentation
-
-### Architecture Documentation
-- **[Architecture Decision Records](docs/architecture/README.md)** - Design decisions and trade-offs
-- **[Component Overview](docs/architecture/components.md)** - Detailed component descriptions
-- **[Network Architecture](docs/architecture/networking.md)** - Network design and security
-
-### Operational Documentation
-- **[Runbooks](docs/runbooks/README.md)** - Step-by-step operational procedures
-- **[Troubleshooting Guide](docs/troubleshooting/README.md)** - Common issues and solutions
-- **[Monitoring Playbook](docs/runbooks/monitoring.md)** - Alert response procedures
-
-### Development Guidelines
-- **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute to the project
-- **[Code Standards](docs/development/standards.md)** - Coding and documentation standards
-- **[Testing Strategy](docs/development/testing.md)** - Testing approaches and requirements
-
 ---
 
 ## 🤝 Contributing
@@ -678,21 +661,6 @@ We welcome contributions that improve the platform architecture, add operational
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-
-## 🆘 Support
-
-### Getting Help
-- **Issues** - Report bugs and feature requests via [GitHub Issues](https://github.com/your-org/iac-platform-demo/issues)
-- **Discussions** - Ask questions in [GitHub Discussions](https://github.com/your-org/iac-platform-demo/discussions)
-- **Documentation** - Check the [docs/](docs/) directory for detailed guides
-
-### Community
-- **Slack** - Join our [Slack workspace](https://join.slack.com/your-workspace) for real-time discussion
-- **Office Hours** - Weekly community calls every Friday at 2 PM EST
-
----
-
-<div align="center">
 
 **Built to demonstrate real-world platform engineering practices**
 
