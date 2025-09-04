@@ -1,0 +1,67 @@
+apiVersion: provisioning.cattle.io/v1
+kind: Cluster
+metadata:
+  name: ioc-platform-cluster
+  namespace: fleet-default
+spec:
+  kubernetesVersion: v1.28.5+rke2r1
+  rkeConfig:
+    chartValues:
+      rke2-calico: {}
+    etcd:
+      snapshotRetention: 5
+      snapshotScheduleCron: "0 */5 * * *"
+    machineGlobalConfig:
+      cni: calico
+      disable-kube-proxy: false
+      etcd-expose-metrics: false
+    machinePools:
+    - name: pool1
+      quantity: 1
+      unhealthyNodeTimeout: "3m"
+      machineConfigRef:
+        apiVersion: rke-machine-config.cattle.io/v1
+        kind: Amazonec2Config
+        name: ioc-platform-cluster-pool1
+      labels:
+        node-role.kubernetes.io/control-plane: "true"
+        node-role.kubernetes.io/etcd: "true"
+        node-role.kubernetes.io/worker: "true"
+    registries: {}
+    upgradeStrategy:
+      controlPlaneConcurrency: "1"
+      controlPlaneDrainOptions:
+        enabled: false
+        force: false
+        gracePeriod: -1
+        ignoreDaemonSets: true
+        timeout: 120
+      workerConcurrency: "1"
+      workerDrainOptions:
+        enabled: false
+        force: false
+        gracePeriod: -1
+        ignoreDaemonSets: true
+        timeout: 120
+---
+apiVersion: rke-machine-config.cattle.io/v1
+kind: Amazonec2Config
+metadata:
+  name: ioc-platform-cluster-pool1
+  namespace: fleet-default
+spec:
+  ami: ""  # Will auto-select latest Ubuntu
+  instanceType: t3.large
+  region: us-east-1
+  vpcId: vpc-0ec2b410a2aef8aa5
+  zone: a
+  subnetId: 
+  securityGroup: 
+  - 
+  sshUser: ubuntu
+  volumeType: gp3
+  rootSize: 50
+  userData: |
+    #!/bin/bash
+    apt-get update
+    apt-get install -y curl

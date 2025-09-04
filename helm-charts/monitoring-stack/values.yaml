@@ -1,0 +1,29 @@
+kube-prometheus-stack:
+  prometheus:
+    prometheusSpec:
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: longhorn
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 50Gi
+  grafana:
+    persistence:
+      enabled: true
+      storageClassName: longhorn
+      size: 10Gi
+    adminPassword: admin123  # Change this in production
+    service:
+      type: LoadBalancer
+  alertmanager:
+    alertmanagerSpec:
+      storage:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: longhorn
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 10Gi
