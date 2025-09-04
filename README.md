@@ -666,7 +666,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 *"Infrastructure as code, GitOps as process, observability as outcome"*
 
 [![⭐ Star this repository](https://img.shields.io/github/stars/your-org/iac-platform-demo?style=social)](https://github.com/your-org/iac-platform-demo)
-[![🐛 Report Issues](https://img.shields.io/github/issues/your-org/iac-platform-demo)](https://github.com/your-org/iac-platform-demo/issues)
 [![🤝 Contribute](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 [⬆️ Back to Top](#-kubernetes-platform-engineering-with-rancher--gitops)
